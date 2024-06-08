@@ -1,52 +1,57 @@
-socket.on("productos", (data) => {
-    renderProductos(data);
+//Creamos una instacia de socket.io desde el lado del cliente
+
+const socket = io();
+
+//Creamos una variable para guardar el usuario.
+let user;
+
+const chatBox = document.getElementById("chatBox");
+
+//Utilizamos Sweet alert para el mensaje de bienvenida
+
+Swal.fire({
+    title: "Identificate",
+    input: "text",
+    text: "Ingresa un usuario para identificarte en el chat",
+    inputValidator: (value) => {
+        return !value && "Necesitas escribir un nombre para continuar";
+    },
+    allowOutsideClick: false,
+}).then( result => {
+    user = result.value;
 })
 
-//Función para renderizar el listado de productos
+//Envio de mensajes 
 
-const renderProductos = (productos) => {
-    const contenedorProductos = document.getElementById("contenedorProductos");
-    contenedorProductos.innerHTML = "";
-
-    productos.forEach(item => {
-        const card = document.createElement("div");
-        card.innerHTML = `
-                            <p> ID: ${item.id} </p>
-                            <p> Titulo:  ${item.title} </p>
-                            <p> Precio: ${item.price} </p>
-                            <button> Eliminar producto </button>
-                        `;
-        contenedorProductos.appendChild(card);
-    
-        //Agregamos el evento al boton de eliminar producto: 
-        card.querySelector("button").addEventListener("click", () => {
-            eliminarProducto(item.id)
-        }) 
-    })
-}
-
-//Eliminar producto: 
-
-const eliminarProducto = (id) => {
-    socket.emit("eliminarProducto", id);
-}
-
-//Agregar producto: 
-
-document.getElementById("btnEnviar").addEventListener("click", () => {
-    agregarProducto();
+chatBox.addEventListener("keyup", (event) => {
+    if(event.key === "Enter") {
+        console.log(chatBox.value);
+        console.log(user)
+        if(chatBox.value.trim().length > 0) {
+            console.log("hola")
+            console.log(chatBox.value.trim())
+            console.log(user)
+            //Si el mensaje tiene más de 0 caracteres, lo enviamos al servidor. 
+            socket.emit("message", {user: user, message: chatBox.value});
+            chatBox.value = "";
+        }
+    }
 })
 
-const agregarProducto = () => {
-    const producto = {
-        title: document.getElementById("title").value,
-        description: document.getElementById("description").value,
-        price: document.getElementById("price").value,
-        img: document.getElementById("img").value,
-        code: document.getElementById("code").value,
-        stock: document.getElementById("stock").value,
-        category: document.getElementById("category").value,
-        status: document.getElementById("status").value === "true"
-    };
-    socket.emit("agregarProducto", producto);
-}
+
+//listerner de mensajes
+
+socket.on("message", data => {
+    const log = document.getElementById("messagesLogs");
+    let messages = "";
+
+    if (Array.isArray(data)) {
+        data.forEach(message => {
+            messages += `${message.user}: ${message.message} <br>`;
+        });
+    } else {
+        console.error("Los datos recibidos no son un array:", data);
+    }
+
+    log.innerHTML = messages;
+});

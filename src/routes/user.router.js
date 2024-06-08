@@ -4,10 +4,7 @@ const UsuarioModel = require("../models/usuario.model.js");
 const { createHash } = require("../utils/hashbcryp.js");
 import passport from "passport";
 
- 
-
-
-//VERSION PARA PASSPORT: 
+ //VERSION PARA PASSPORT: 
 //(estrategia local)
 
 router.post("/", passport.authenticate("register", {

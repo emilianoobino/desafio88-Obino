@@ -1,9 +1,14 @@
 const express = require("express");
 const router = express.Router();
-const ProductManager = require("../controllers/product-manager-db.js");
-const CartManager = require("../controllers/cart-manager-db.js");
+const ProductManager = require("../controllers/product.controller.js");
+const CartManager = require("../controllers/cart.controller.js");
 const productManager = new ProductManager();
 const cartManager = new CartManager();
+const mongoose = require("mongoose");
+const messagesController = require("../controllers/messages.controller.js");
+
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+
 
 // Ruta para obtener productos paginados
 router.get("/products", async (req, res) => {
@@ -36,16 +41,15 @@ router.get("/products", async (req, res) => {
         });
     }
 });
+router.get("/products", productsController.getProductsView);
+
 
 // Ruta para obtener productos en tiempo real
-router.get("/realtimeproducts", (req, res) => {
-    res.render("realtimeproducts");
-});
+router.get("/realTimeProducts", productsController.getRealTimeProductsView);
 
 // Ruta para el chat
-router.get("/chat", async (req, res) => {
-    res.render("chat");
-});
+router.get("/chat", messagesController.getChatView);
+
 
 // Ruta para obtener el carrito por su ID
 router.get("/carts/:cid", async (req, res) => {
@@ -73,7 +77,7 @@ router.get("/carts/:cid", async (req, res) => {
 
 // Ruta para el formulario de login
 router.get("/login", (req, res) => {
-    // Verifica si el usuario ya está logueado y redirige a la página de perfil si es así
+    
     if (req.session.login) {
         return res.redirect("/products");
     }
@@ -82,7 +86,7 @@ router.get("/login", (req, res) => {
 
 // Ruta para el formulario de registro
 router.get("/register", (req, res) => {
-    // Verifica si el usuario ya está logueado y redirige a la página de perfil si es así
+    
     if (req.session.login) {
         return res.redirect("/profile");
     }
@@ -91,14 +95,14 @@ router.get("/register", (req, res) => {
 
 // Ruta para la vista de perfil
 router.get("/profile", (req, res) => {
-    // Verifica si el usuario está logueado
+    
     if (!req.session.login) {
-        // Redirige al formulario de login si no está logueado
+        
         return res.redirect("/login");
     }
 
-    // Renderiza la vista de perfil con los datos del usuario
     res.render("profile", { user: req.session.user });
 });
 
 module.exports = router;
+

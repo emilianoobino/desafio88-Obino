@@ -1,11 +1,22 @@
-<h1>Carrito de Compras</h1>
+<link rel="stylesheet" href="/css/style.css">
+<h3>Carrito</h3>
+<div id="productsContainer">
+        {{#if cart.products.length}}
+            {{#each cart.products}}
+                <div>
+                    <div class="card">
+                        <p>Precio: ${{this.product.price}}</p>
+                        <p>Título: {{this.product.title}}</p>
+                        <p>Descripción: {{this.product.description}}</p>
+                        <p>Cantidad: {{this.quantity}}</p>
+                        <p>ID del Producto: {{this.product._id}}</p>
+                    </div>
+                </div>
+            {{/each}}
+        {{else}}
+            <p>El carrito está vacío</p>
+        {{/if}}
+</div>
 
-{{#each productos}}
-  <div>
-    <p>Producto: {{this.product.title}}</p>
-    <p>Categoria: {{this.product.category}} </p>
-    <p>Precio: {{this.product.price}} </p>
-    <p>Cantidad: {{this.quantity}}</p>
-    <p>Codigo de producto: {{this.product.code}} </p>
-  </div>
-{{/each}}
+<script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+<script src="/js/main.js"></script>
