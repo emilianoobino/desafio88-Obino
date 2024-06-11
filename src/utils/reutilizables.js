@@ -1,4 +1,4 @@
-const passport = require("passport");
+import passport from "passport";
 
 const passportCall = (strategy) => {
     return async (req, res, next) => {

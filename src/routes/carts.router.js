@@ -1,6 +1,8 @@
-const express = require("express");
+import express from "express";
+import cartController from "../controllers/cart.controller.js"; 
+// Asegúrate de que cart.controller.js también use ES Modules
+
 const router = express.Router();
-const cartController = require("../controllers/cart.controller.js");
 
 router.post("/", cartController.createCart);
 router.get("/", cartController.getCarts);
@@ -12,7 +14,8 @@ router.post("/:id/products", cartController.addProductToCart);
 router.delete("/:id/products/:productId", cartController.deleteProductById);
 router.post("/:id/clear", cartController.clearCart);
 
-module.exports = router;
+export default router; // ES Modules export
+
 
  
 

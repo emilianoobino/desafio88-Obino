@@ -1,111 +1,119 @@
-import passport from "passport";
-import local from "passport-local";
-import GitHubStrategy from "passport-github2";
-import UsuarioModel from "../models/usuario.model.js";
-import { createHash, isValidPassword } from "../utils/hashbcrypt.js";
-import CartManager from "../controllers/cart-manager-db.js";
+import 'dotenv/config';
+import passport from 'passport';
+import { Strategy as LocalStrategy } from 'passport-local';
+import { Strategy as GitHubStrategy } from 'passport-github';
+import bcrypt from 'bcryptjs';
+import userModel from '../models/usuario.model.js';
+import cartService from "../services/cart.service.js";
+import CartModel from "../models/cart.model.js";
 
-const cartManager = new CartManager();
-const LocalStrategy = local.Strategy;
+// Función para hashear la contraseña
+const createHash = (password) => {
+    return bcrypt.hashSync(password, bcrypt.genSaltSync(10));
+};
 
+// Función para comparar la contraseña hasheada
+const isValidPassword = (password, user) => {
+    return bcrypt.compareSync(password, user.password);
+};
+
+// Función para inicializar Passport con nuestras estrategias
 const initializePassport = () => {
-    // Estrategia de registro
-    passport.use("register", new LocalStrategy({
+    passport.use('register', new LocalStrategy({
         passReqToCallback: true,
-        usernameField: "email"
+        usernameField: 'email'
     }, async (req, username, password, done) => {
         const { first_name, last_name, email, age } = req.body;
-
         try {
-            // Verificamos si ya existe un registro con ese email
-            let usuario = await UsuarioModel.findOne({ email });
-            if (usuario) {
-                return done(null, false, { message: "El usuario ya existe" });
+            let user = await userModel.findOne({ email });
+            if (user) {
+                return done(null, false, { message: 'El correo electrónico ya está registrado' });
             }
 
-            // Crear un nuevo carrito
-            let nuevoCarrito = await cartManager.crearCarrito();
+            const newCart = await cartService.createNewCart(); 
 
-            // Crear un registro de usuario nuevo
-            let nuevoUsuario = {
+            let newUser = {
                 first_name,
                 last_name,
                 email,
                 age,
                 password: createHash(password),
-                cart: nuevoCarrito._id // Solo almacenamos la referencia del carrito
+                cart: newCart._id
             };
 
-            let resultado = await UsuarioModel.create(nuevoUsuario);
+            let resultado = await userModel.create(newUser);
             return done(null, resultado);
         } catch (error) {
             return done(error);
         }
     }));
 
-    // Estrategia de login
-    passport.use("login", new LocalStrategy({
-        usernameField: "email"
+    // Estrategia para autenticar un usuario ya registrado
+    passport.use('login', new LocalStrategy({
+        usernameField: 'email'
     }, async (email, password, done) => {
         try {
-            // Verificar si existe un usuario con ese email
-            let usuario = await UsuarioModel.findOne({ email });
-            if (!usuario) {
-                return done(null, false, { message: "Usuario no encontrado" });
+            // Verificamos si existe un usuario con ese email
+            let user = await userModel.findOne({ email });
+            if (!user) {
+                return done(null, false, { message: 'Usuario no encontrado' });
             }
-
-            // Verificar la contraseña
-            if (!isValidPassword(password, usuario)) {
-                return done(null, false, { message: "Contraseña incorrecta" });
+            // Verificamos la contraseña
+            if (!isValidPassword(password, user)) {
+                return done(null, false, { message: 'Contraseña incorrecta' });
             }
-
-            return done(null, usuario);
+            return done(null, user);
         } catch (error) {
             return done(error);
         }
     }));
 
-    // Serializar y deserializar usuario
+    // Estrategia para autenticación con GitHub
+    passport.use('github', new GitHubStrategy({
+        clientID: process.env.GITHUB_CLIENT_ID,
+        clientSecret: process.env.GITHUB_CLIENT_SECRET,
+        callbackURL: 'http://localhost:8080/api/sessions/github/callback'
+    }, 
+    async (accessToken, refreshToken, profile, done) => {
+        try {
+            // Verificamos si ya existe un usuario con el email de GitHub
+            const email = profile._json.email || `${profile.username}@github.com`; // usa el nombre de usuario si el correo no está disponible
+            let user = await userModel.findOne({ email });
+            if (!user) {
+                // Si no existe, creamos un nuevo usuario y el carrito asociado
+                const newCart = new CartModel({ products: [], quantity: 0 });
+                await newCart.save();
+                let newUser = {
+                    first_name: profile._json.name || profile.username,
+                    last_name: profile._json.name || profile.username,
+                    email: email,
+                    age: 18,
+                    cart: newCart._id,
+                    password: createHash('github')
+                };
+                let resultado = await userModel.create(newUser);
+                done(null, resultado);
+            } else {
+                done(null, user);
+            }
+        } catch (error) {
+            return done(error);
+        }
+    }));
+
+    // Serializar y deserializar el usuario para la sesión
     passport.serializeUser((user, done) => {
         done(null, user._id);
     });
 
     passport.deserializeUser(async (id, done) => {
         try {
-            let user = await UsuarioModel.findById(id);
+            let user = await userModel.findById(id);
             done(null, user);
         } catch (error) {
             done(error);
         }
     });
-
-    // Estrategia de GitHub
-    passport.use("github", new GitHubStrategy({
-        clientID: process.env.GITHUB_CLIENT_ID,
-        clientSecret: process.env.GITHUB_CLIENT_SECRET,
-        callbackURL: "http://localhost:8080/api/sessions/githubcallback"
-    }, async (accessToken, refreshToken, profile, done) => {
-        try {
-            let usuario = await UsuarioModel.findOne({ email: profile._json.email });
-
-            if (!usuario) {
-                let nuevoUsuario = {
-                    first_name: profile._json.name,
-                    last_name: "",
-                    age: 36,
-                    email: profile._json.email,
-                    password: "miau" // Considera usar un valor hash o más seguro
-                };
-
-                let resultado = await UsuarioModel.create(nuevoUsuario);
-                done(null, resultado);
-            } else {
-                done(null, usuario);
-            }
-        } catch (error) {
-            return done(error);
-        }
-    }));
 };
 
 export default initializePassport;

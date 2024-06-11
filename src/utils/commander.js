@@ -9,4 +9,4 @@ program
     .option("-p <port>", "puerto donde se inicia el servidor", 8080)
 program.parse(); 
 
-module.exports = program; 
+export default program; 

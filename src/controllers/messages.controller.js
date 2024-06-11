@@ -1,6 +1,6 @@
-const messageService = require("../services/message.service");
+import { messageService } from "../services/message.service.js";
 
-exports.getChatView = async (req, res) => {
+export const getChatView = async (req, res) => {
     try {
         const messages = await messageService.getAllMessages();
         res.render("chat", { messages });
@@ -9,3 +9,6 @@ exports.getChatView = async (req, res) => {
         res.status(500).send("Error interno del servidor");
     }
 };
+
+
+export default messageService;

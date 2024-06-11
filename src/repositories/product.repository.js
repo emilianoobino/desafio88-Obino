@@ -1,4 +1,5 @@
-const ProductModel = require("../models/product.model");
+import ProductModel from "../models/product.model.js";
+
 
 class ProductRepository {
     async addProduct(productData) {
@@ -23,4 +24,4 @@ class ProductRepository {
     }
 }
 
-module.exports = new ProductRepository();
+export default new ProductRepository();

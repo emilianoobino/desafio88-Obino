@@ -1,7 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const UsuarioModel = require("../models/usuario.model.js");
-const { createHash } = require("../utils/hashbcryp.js");
+//import UsuarioModel from "../models/usuario.model.js";
+//import { createHash } from "../utils/hashbcryp.js";
 import passport from "passport";
 
  //VERSION PARA PASSPORT: 

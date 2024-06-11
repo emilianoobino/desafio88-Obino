@@ -1,6 +1,6 @@
 //Acá hacemos la conexión con MONGODB: 
 
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 import 'dotenv/config';
 
 //2) Crear una conexión con la base de datos

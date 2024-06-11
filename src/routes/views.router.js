@@ -1,11 +1,8 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const ProductManager = require("../controllers/product.controller.js");
-const CartManager = require("../controllers/cart.controller.js");
-const productManager = new ProductManager();
-const cartManager = new CartManager();
-const mongoose = require("mongoose");
-const messagesController = require("../controllers/messages.controller.js");
+import productsController from "../controllers/product.controller.js";
+import mongoose from "mongoose";
+import messagesController from "../controllers/messages.controller.js";
 
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -41,14 +38,17 @@ router.get("/products", async (req, res) => {
         });
     }
 });
+
+// Aquí deberías usar la misma ruta para definir el controlador
 router.get("/products", productsController.getProductsView);
+
 
 
 // Ruta para obtener productos en tiempo real
 router.get("/realTimeProducts", productsController.getRealTimeProductsView);
 
 // Ruta para el chat
-router.get("/chat", messagesController.getChatView);
+router.get("/chat", (req, res) => { messagesController.getChatView });
 
 
 // Ruta para obtener el carrito por su ID
@@ -104,5 +104,5 @@ router.get("/profile", (req, res) => {
     res.render("profile", { user: req.session.user });
 });
 
-module.exports = router;
+export default router;
 

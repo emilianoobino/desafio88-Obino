@@ -1,4 +1,4 @@
-const productRepository = require("../repositories/product.repository");
+import productRepository from "../repositories/product.repository.js";
 
 class ProductService {
     async addProduct(productData) {
@@ -44,4 +44,4 @@ class ProductService {
     }
 }
 
-module.exports = new ProductService();
+export default new ProductService();

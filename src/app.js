@@ -3,26 +3,25 @@ import exphbs from "express-handlebars";
 import session from "express-session";
 import MongoStore from "connect-mongo";
 import http from "http";
-import socket from "socket.io";
+import { Server as SocketIO } from "socket.io";
 import passport from "passport";
 import initializePassport from "./config/passport.config.js";
-
-
-const program = require("./utils/commander.js");
+import productsRouter from "./routes/products.router.js";
+import cartsRouter from "./routes/carts.router.js";
+import viewsRouter from "./routes/views.router.js";
+import sessionRouter from "./routes/session.router.js";
+import userRouter from "./routes/user.router.js";
+import MessageModel from "./models/message.model.js";
+import productService from "./services/product.service.js";
+import cartService from "./services/cart.service.js";
+import "./database.js";
+import program from"./utils/commander.js";
 
 const app = express();
 const PUERTO = 8080;
-require("./database.js");
 
 // Crear servidor HTTP
 const httpServer = http.createServer(app);
-
-const productsRouter = require("./routes/products.router.js");
-const cartsRouter = require("./routes/carts.router.js");
-const viewsRouter = require("./routes/views.router.js");
-const sessionRouter = require("./routes/session.router.js");
-const userRouter = require("./routes/user.router.js");
-const MessageModel = require("./models/message.model.js");
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
@@ -46,7 +45,7 @@ app.use(passport.session());
 initializePassport(); 
 
 // Handlebars
-const hbs = expresshandlebars.create({
+const hbs = exphbs.create({
     defaultLayout: 'main', 
     runtimeOptions: {
         allowProtoPropertiesByDefault: true,
@@ -54,7 +53,7 @@ const hbs = expresshandlebars.create({
     }
 });
 
-app.engine("handlebars", exphbs.engine());
+app.engine("handlebars", hbs.engine);
 app.set("view engine", "handlebars");
 app.set("views", "./src/views");
 
@@ -70,13 +69,12 @@ httpServer.listen(PUERTO, () => {
 });
 
 // Chat en el ecommerce
-const MessageModel = require("./models/message.model.js");
-const io = new socket.Server(httpServer);
+const io = new SocketIO(httpServer);
 
-io.on("connection", socket => {
+io.on("connection", async (socket) => {
     console.log("Nuevo usuario conectado");
 
-    socket.on("message", async data => {
+    socket.on("message", async (data) => {
         // Guardar el mensaje en MongoDB
         await MessageModel.create(data);
 
@@ -85,14 +83,6 @@ io.on("connection", socket => {
         console.log(messages);
         io.sockets.emit("message", messages);
     });
-});
-
-// Manejo de eventos de productos
-const productService = require("./services/product.service.js");
-
-
-io.on("connection", async (socket) => {
-    console.log("Un cliente conectado");
 
     // Envía array de productos al cliente
     socket.emit("products", await productService.getProducts());
@@ -106,22 +96,16 @@ io.on("connection", async (socket) => {
 
     // Recibe el evento addProduct desde el cliente
     socket.on("addProduct", async (product) => {
-        await productManager.addProduct(product);
+        await productService.addProduct(product);
         // Envía el array de productos actualizados
-        socket.emit("products", await productManager.getProducts());
+        socket.emit("products", await productService.getProducts());
     });
-});
-
-
-// Manejo de eventos de carrito
-const cartService = require("./services/cart.service.js");
-
-io.on("connection", async (socket) => {
-    console.log("Un cliente conectado");
 
     // Envía los datos del carrito al cliente cuando se conecta
     socket.emit("cart", await cartService.getProductsFromCart());
 });
+
+
 
 
 

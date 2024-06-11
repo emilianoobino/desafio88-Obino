@@ -1,5 +1,10 @@
-const MessageModel = require("../models/message.model");
+import MessageModel from "../models/message.model.js";
 
-exports.getAllMessages = async () => {
-    return await MessageModel.find().lean();
+const messageService = {
+    getAllMessages: async () => {
+        return await MessageModel.find().lean();
+    }
 };
+
+export { messageService };
+
